@@ -63,61 +63,6 @@ npm run prisma:migrate:deploy  # Apply committed migrations in production
 npm run prisma:studio          # Open Prisma Studio
 ```
 
-## API
-
-### Register
-
-`POST /api/auth/register`
-
-```json
-{
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "password": "Password123!"
-}
-```
-
-### Login
-
-`POST /api/auth/login`
-
-```json
-{
-  "email": "jane@example.com",
-  "password": "Password123!"
-}
-```
-
-### Refresh access token
-
-`POST /api/auth/refresh`
-
-```json
-{
-  "refreshToken": "your_refresh_token"
-}
-```
-
-### Logout
-
-`POST /api/auth/logout`
-
-```json
-{
-  "refreshToken": "your_refresh_token"
-}
-```
-
-### Current user
-
-`GET /api/me`
-
-Header:
-
-```text
-Authorization: Bearer your_access_token
-```
-
 ## Notes
 
 Refresh tokens are stored as SHA-256 hashes in PostgreSQL. On refresh, the old refresh token is revoked and replaced with a new one. On logout, the refresh token is revoked; any existing access token will remain valid until its short expiry time.
