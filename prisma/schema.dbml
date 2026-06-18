@@ -6,8 +6,14 @@ Table users {
   id String [pk]
   name String [not null]
   email String [unique, not null]
+  phone String
+  avatarUrl String
+  role Role [not null, default: 'CUSTOMER']
   passwordHash String [not null]
   refreshTokens refresh_tokens [not null]
+  salons salons [not null]
+  bookings bookings [not null]
+  reviews reviews [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
 }
@@ -25,6 +31,169 @@ Table refresh_tokens {
   createdAt DateTime [default: `now()`, not null]
 }
 
+Table categories {
+  id String [pk]
+  name String [not null]
+  slug String [unique, not null]
+  icon String
+  description String
+  sortOrder Int [not null, default: 0]
+  salons salons [not null]
+  createdAt DateTime [default: `now()`, not null]
+
+  Note: 'A top-level marketplace vertical (Salon, Barbershop, Spa, Yoga, etc.)'
+}
+
+Table salons {
+  id String [pk]
+  ownerId String [not null]
+  owner users [not null]
+  categoryId String [not null]
+  category categories [not null]
+  name String [not null]
+  slug String [unique, not null]
+  tagline String
+  description String
+  coverImage String
+  images String[] [not null]
+  phone String
+  email String
+  addressLine String
+  area String
+  city String [not null]
+  state String
+  pincode String
+  latitude Float
+  longitude Float
+  priceLevel PriceLevel [not null, default: 'MODERATE']
+  isVerified Boolean [not null, default: false]
+  isActive Boolean [not null, default: true]
+  openingHours Json
+  ratingAvg Float [not null, default: 0]
+  ratingCount Int [not null, default: 0]
+  services services [not null]
+  staff staff_members [not null]
+  bookings bookings [not null]
+  reviews reviews [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+
+  Note: 'A partner business listed on the marketplace.'
+}
+
+Table services {
+  id String [pk]
+  salonId String [not null]
+  salon salons [not null]
+  name String [not null]
+  description String
+  durationMin Int [not null]
+  priceInr Int [not null]
+  category String
+  isActive Boolean [not null, default: true]
+  bookings bookings [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+
+  Note: 'A bookable service offered by a salon.'
+}
+
+Table staff_members {
+  id String [pk]
+  salonId String [not null]
+  salon salons [not null]
+  name String [not null]
+  title String
+  bio String
+  avatarUrl String
+  isActive Boolean [not null, default: true]
+  bookings bookings [not null]
+  createdAt DateTime [default: `now()`, not null]
+
+  Note: 'A staff member / professional at a salon.'
+}
+
+Table bookings {
+  id String [pk]
+  customerId String [not null]
+  customer users [not null]
+  salonId String [not null]
+  salon salons [not null]
+  serviceId String [not null]
+  service services [not null]
+  staffId String
+  staff staff_members
+  scheduledAt DateTime [not null]
+  durationMin Int [not null]
+  status BookingStatus [not null, default: 'PENDING']
+  totalInr Int [not null]
+  tokenPaidInr Int [not null, default: 0]
+  notes String
+  review reviews
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+
+  Note: 'A customer appointment for a service at a salon.'
+}
+
+Table reviews {
+  id String [pk]
+  salonId String [not null]
+  salon salons [not null]
+  customerId String [not null]
+  customer users [not null]
+  bookingId String [unique]
+  booking bookings
+  rating Int [not null]
+  comment String
+  createdAt DateTime [default: `now()`, not null]
+
+  Note: 'A customer review for a salon, optionally tied to a completed booking.'
+}
+
+Enum Role {
+  CUSTOMER
+  SALON_OWNER
+  ADMIN
+}
+
+Enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+Enum PriceLevel {
+  BUDGET
+  MODERATE
+  PREMIUM
+  LUXURY
+}
+
 Ref: refresh_tokens.userId > users.id [delete: Cascade]
 
 Ref: refresh_tokens.replacedByTokenId - refresh_tokens.id
+
+Ref: salons.ownerId > users.id [delete: Cascade]
+
+Ref: salons.categoryId > categories.id
+
+Ref: services.salonId > salons.id [delete: Cascade]
+
+Ref: staff_members.salonId > salons.id [delete: Cascade]
+
+Ref: bookings.customerId > users.id [delete: Cascade]
+
+Ref: bookings.salonId > salons.id [delete: Cascade]
+
+Ref: bookings.serviceId > services.id
+
+Ref: bookings.staffId > staff_members.id
+
+Ref: reviews.salonId > salons.id [delete: Cascade]
+
+Ref: reviews.customerId > users.id [delete: Cascade]
+
+Ref: reviews.bookingId - bookings.id [delete: Set Null]

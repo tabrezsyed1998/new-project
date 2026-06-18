@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db/prisma.js';
+import { Role } from '../generated/prisma/enums.js';
 import { ApiError } from '../utils/apiError.js';
 import { validateLoginInput, validateRegisterInput } from '../utils/validators.js';
 import {
@@ -13,12 +14,17 @@ type AuthInput = {
   name?: string;
   email?: string;
   password?: string;
+  phone?: string;
+  role?: string;
 };
 
 export type PublicUser = {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  role: Role;
   createdAt: Date;
 };
 
@@ -32,6 +38,9 @@ const publicUserSelect = {
   id: true,
   name: true,
   email: true,
+  phone: true,
+  avatarUrl: true,
+  role: true,
   createdAt: true
 } as const;
 
@@ -40,6 +49,9 @@ export async function registerUser(input: AuthInput): Promise<AuthPayload> {
 
   const name = input.name!.trim();
   const email = input.email!.trim().toLowerCase();
+  const phone = input.phone?.trim() || null;
+  // Only CUSTOMER and SALON_OWNER may self-register; ADMIN is provisioned manually.
+  const role = input.role === Role.SALON_OWNER ? Role.SALON_OWNER : Role.CUSTOMER;
   const passwordHash = await bcrypt.hash(input.password!, 12);
 
   try {
@@ -57,6 +69,8 @@ export async function registerUser(input: AuthInput): Promise<AuthPayload> {
         data: {
           name,
           email,
+          phone,
+          role,
           passwordHash
         },
         select: publicUserSelect
@@ -194,6 +208,37 @@ export async function logoutUser(refreshToken: string | undefined): Promise<void
   });
 }
 
+export type UpdateProfileInput = {
+  name?: string;
+  phone?: string;
+  avatarUrl?: string;
+};
+
+export async function updateProfile(userId: string, input: UpdateProfileInput): Promise<PublicUser> {
+  const data: { name?: string; phone?: string | null; avatarUrl?: string | null } = {};
+
+  if (input.name !== undefined) {
+    if (input.name.trim().length < 2) {
+      throw new ApiError(400, 'Name must be at least 2 characters long.');
+    }
+    data.name = input.name.trim();
+  }
+
+  if (input.phone !== undefined) {
+    data.phone = input.phone.trim() || null;
+  }
+
+  if (input.avatarUrl !== undefined) {
+    data.avatarUrl = input.avatarUrl.trim() || null;
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data,
+    select: publicUserSelect
+  });
+}
+
 async function issueTokens(
   tx: PrismaTransaction,
   user: PublicUser
@@ -221,6 +266,9 @@ function toPublicUser(user: PublicUser & { passwordHash?: string }): PublicUser 
     id: user.id,
     name: user.name,
     email: user.email,
+    phone: user.phone,
+    avatarUrl: user.avatarUrl,
+    role: user.role,
     createdAt: user.createdAt
   };
 }
