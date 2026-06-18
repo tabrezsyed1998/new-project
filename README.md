@@ -1,13 +1,32 @@
-# New Project Backend
+# Sundara Backend
 
-Node.js + Express + TypeScript + Prisma + PostgreSQL authentication starter with:
+Node.js + Express + TypeScript + Prisma + PostgreSQL API for **Sundara**, India's salon &
+wellness marketplace + SaaS.
 
-- User registration
-- Login
-- Access token issuance
-- Refresh token rotation
-- Logout by refresh token revocation
-- Protected `/api/me` route
+### Auth
+- User registration (role: `CUSTOMER` or `SALON_OWNER`)
+- Login, access-token issuance, refresh-token rotation, logout (revocation)
+- Protected `/api/me` (GET + PATCH profile)
+- Role-based access control (`requireRole`)
+
+### Marketplace (public)
+- `GET /api/categories` — wellness verticals with salon counts
+- `GET /api/cities` — distinct cities with active salons
+- `GET /api/salons` — search & filter (`q`, `city`, `category`, `priceLevel`, `verified`, `sort`, `page`, `pageSize`)
+- `GET /api/salons/:slug` — full detail (services, staff, reviews, opening hours)
+
+### Bookings & reviews (customer)
+- `POST /api/bookings` — create (computes refundable token; checks staff slot conflicts)
+- `GET /api/bookings` — my bookings (filter by `status`)
+- `PATCH /api/bookings/:id/cancel`
+- `POST /api/salons/:salonId/reviews` — review a completed booking (recomputes cached rating)
+
+### Salon-owner SaaS (`/api/owner`, role-guarded)
+- `GET /analytics` — bookings by status, revenue (month + lifetime), recent bookings
+- `GET/POST /salons`, `PATCH /salons/:id` — manage listings (auto-slug)
+- `GET/POST /salons/:id/services`, `PATCH/DELETE /services/:id` — manage services (soft-delete)
+- `POST /salons/:id/staff` — add professionals
+- `GET /bookings`, `PATCH /bookings/:id/status` — confirm / complete / no-show / cancel
 
 ## Setup
 
@@ -43,13 +62,28 @@ For production or staging deployments, use:
 npm run prisma:migrate:deploy
 ```
 
-5. Start the server:
+5. Seed demo data (categories, salons, services, bookings, reviews + demo logins):
+
+```bash
+npm run prisma:seed
+```
+
+6. Start the server:
 
 ```bash
 npm run dev
 ```
 
 The API runs at `http://localhost:5000` by default.
+
+### Demo logins (password: `Password123`)
+
+| Role        | Email                  |
+| ----------- | ---------------------- |
+| Admin       | `admin@sundara.app`    |
+| Salon owner | `owner@sundara.app`    |
+| Salon owner | `priya@sundara.app`    |
+| Customer    | `customer@sundara.app` |
 
 ## Scripts
 
@@ -61,6 +95,8 @@ npm run prisma:generate        # Regenerate Prisma Client
 npm run prisma:migrate:dev     # Create/apply local development migrations
 npm run prisma:migrate:deploy  # Apply committed migrations in production
 npm run prisma:studio          # Open Prisma Studio
+npm run prisma:seed            # Seed demo marketplace data
+npm run db:reset               # Reset DB + re-run migrations (destructive)
 ```
 
 ## Notes

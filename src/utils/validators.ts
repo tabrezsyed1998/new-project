@@ -4,6 +4,7 @@ type RegisterInput = {
   name?: string;
   email?: string;
   password?: string;
+  role?: string;
 };
 
 type LoginInput = {
@@ -11,9 +12,15 @@ type LoginInput = {
   password?: string;
 };
 
-export function validateRegisterInput({ name, email, password }: RegisterInput): void {
+const SELF_REGISTERABLE_ROLES = ['CUSTOMER', 'SALON_OWNER'];
+
+export function validateRegisterInput({ name, email, password, role }: RegisterInput): void {
   if (!name || String(name).trim().length < 2) {
     throw new ApiError(400, 'Name must be at least 2 characters long.');
+  }
+
+  if (role !== undefined && !SELF_REGISTERABLE_ROLES.includes(role)) {
+    throw new ApiError(400, 'Role must be either CUSTOMER or SALON_OWNER.');
   }
 
   validateEmail(email);

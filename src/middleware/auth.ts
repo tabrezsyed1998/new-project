@@ -21,6 +21,9 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
         id: true,
         name: true,
         email: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
         createdAt: true
       }
     });
