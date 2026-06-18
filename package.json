@@ -6,9 +6,10 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsc",
+    "build": "prisma generate --generator client && tsc",
     "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate --generator client",
+    "prisma:dbml": "prisma generate --generator dbml",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
